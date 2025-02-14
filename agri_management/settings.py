@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'master_data',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -71,6 +73,22 @@ SIMPLE_JWT = {
 
 ROOT_URLCONF = 'agri_management.urls'
 
+# CROSS HEADER Connection
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = ("http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:8000", "http://localhost:8001", "https://new-test-mauve.vercel.app", "https://bharti-clinic-frontend.vercel.app") # noqa
+CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -95,11 +113,14 @@ WSGI_APPLICATION = 'agri_management.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'HOST': config('DB_HOST'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'PORT': config('DB_PORT')
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
