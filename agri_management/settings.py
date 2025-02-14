@@ -75,7 +75,7 @@ ROOT_URLCONF = 'agri_management.urls'
 
 # CROSS HEADER Connection
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = ("http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:8000", "http://localhost:8001", "https://new-test-mauve.vercel.app", "https://bharti-clinic-frontend.vercel.app") # noqa
+CORS_ALLOWED_ORIGINS = ("http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:8000", "http://localhost:8001") # noqa
 CORS_ALLOW_METHODS = ['DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT']
 CORS_ALLOW_HEADERS = [
     'accept',
