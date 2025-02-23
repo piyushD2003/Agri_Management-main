@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from master_data.models import City
+
 
 
 class UserManager(BaseUserManager):
@@ -74,3 +76,84 @@ class User(AbstractBaseUser):
 
     def has_module_perms(self, app_label):
         return self.is_superuser or self.is_staff
+
+
+class Farmer(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE,
+        related_name="farmer_profile"
+        )
+    farm_name = models.CharField(
+        max_length=255, verbose_name="Farm Name")
+    farm_location = models.CharField(max_length=255, verbose_name="Farm Location"
+        )
+    farm_size = models.FloatField(
+        verbose_name="Farm Size (in hectares)"
+        )
+
+    def __str__(self):
+        return f"Farmer: {self.user.first_name} {self.user.last_name}"
+    
+    city = models.CharField(
+      max_length=255, verbose_name="City", null=True, blank=True
+       )
+
+    class Meta:
+        db_table = "farmer"
+        verbose_name = "Farmer"
+        verbose_name_plural = "Farmers"
+
+
+class FarmManager(models.Model):
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, 
+        related_name="farm_manager_profile"
+        )
+    farm_name = models.CharField(
+        max_length=255,
+        verbose_name="Farm Name"
+        )
+    farm_location = models.CharField(
+        max_length=255,
+        verbose_name="Farm Location"
+        )
+    manager_experience = models.IntegerField(
+        verbose_name="Years of Experience"
+        )
+
+    def __str__(self):
+        return f"Farm Manager: {self.user.first_name} {self.user.last_name}"
+
+    class Meta:
+        db_table = "farm_manager"
+        verbose_name = "Farm Manager"
+        verbose_name_plural = "Farm Managers"
+
+
+class Farm(models.Model):
+    name = models.CharField(max_length=255,
+        verbose_name="Farm Name"
+    )
+    address = models.CharField(max_length=255,
+        verbose_name="Farm Address"
+    )
+    location_url = models.URLField(verbose_name="Farm Location URL")
+    city = models.ForeignKey(
+        City, on_delete=models.CASCADE, 
+        verbose_name="City"
+    )
+    farm_size = models.CharField(max_length=50, 
+        verbose_name="Farm Size"
+    )
+    user_created = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="farms",
+        verbose_name="User Created"
+    )
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "farm"
+        verbose_name = "Farm"
+        verbose_name_plural = "Farms"

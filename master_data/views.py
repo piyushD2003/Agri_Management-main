@@ -1,9 +1,9 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from master_data.models import ProductCategory, Product
-from master_data.serializers import ProductCategorySerializer, ProductSerializer
-
+from master_data.models import ProductCategory, Product, City
+from master_data.serializers import ProductCategorySerializer, ProductSerializer, CitySerializer
+from master_data.filters import ProductCategoryFilter, ProductFilter, CityFilter
 
 class MasterData(APIView):
 
@@ -19,6 +19,7 @@ class MasterData(APIView):
             action_mapper = {
                 "getCategory": self.getCategory,
                 "getProduct": self.getProduct,
+                "getCity": self.getCity,  
             }
             action_status = action_mapper.get(action)
             if action_status:
@@ -31,7 +32,9 @@ class MasterData(APIView):
 
     def getCategory(self, request):
         try:
-            categories = ProductCategory.objects.all()
+            # Apply filter for ProductCategory
+            category_filter = ProductCategoryFilter(request.GET, queryset=ProductCategory.objects.all())
+            categories = category_filter.qs
             serializer = ProductCategorySerializer(categories, many=True).data
             if self.pk and len(serializer):
                 serializer = serializer[0]
@@ -43,7 +46,9 @@ class MasterData(APIView):
 
     def getProduct(self, request):
         try:
-            products = Product.objects.all()
+            # Apply filter for Product
+            product_filter = ProductFilter(request.GET, queryset=Product.objects.all())
+            products = product_filter.qs
             serializer = ProductSerializer(products, many=True).data
             if self.pk and len(serializer):
                 serializer = serializer[0]
@@ -51,6 +56,20 @@ class MasterData(APIView):
             self.status = status.HTTP_200_OK
         except Exception:
             self.ctx = {"message": "Failed to get products!"}
+            self.status = status.HTTP_404_NOT_FOUND
+
+    def getCity(self, request):
+        try:
+           
+            city_filter = CityFilter(request.GET, queryset=City.objects.all())
+            cities = city_filter.qs
+            serializer = CitySerializer(cities, many=True).data
+            if self.pk and len(serializer):
+                serializer = serializer[0]
+            self.ctx = {"message": "Successfully retrieved Cities!", "data": serializer}
+            self.status = status.HTTP_200_OK
+        except Exception:
+            self.ctx = {"message": "Failed to get cities!"}
             self.status = status.HTTP_404_NOT_FOUND
 
     def post(self, request):
@@ -62,6 +81,7 @@ class MasterData(APIView):
             action_mapper = {
                 "postCategory": self.postCategory,
                 "postProduct": self.postProduct,
+                "postCity": self.postCity,  
             }
             action_status = action_mapper.get(action)
             if action_status:
@@ -93,6 +113,7 @@ class MasterData(APIView):
         category_id = self.data.get("category_id")
 
         try:
+            
             category = ProductCategory.objects.get(id=category_id)
             product = Product(name=name, description=description, price=price, category=category)
             product.save()
@@ -102,6 +123,19 @@ class MasterData(APIView):
         except ProductCategory.DoesNotExist:
             self.ctx = {"message": "Category not found!"}
             self.status = status.HTTP_404_NOT_FOUND
+        except Exception as e:
+            self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
+            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def postCity(self):
+        name = self.data.get("name")
+
+        try:
+            city = City(name=name)
+            city.save()
+            serializer = CitySerializer(city).data
+            self.ctx = {"message": "City Created!", "data": serializer}
+            self.status = status.HTTP_201_CREATED
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -118,6 +152,7 @@ class MasterData(APIView):
             action_mapper = {
                 "patchCategory": self.patchCategory,
                 "patchProduct": self.patchProduct,
+                "patchCity": self.patchCity,  
             }
             action_status = action_mapper.get(action)
             if action_status:
@@ -181,6 +216,25 @@ class MasterData(APIView):
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
 
+    def patchCity(self):
+        name = self.data.get("name")
+
+        try:
+            city = City.objects.get(pk=self.pk)
+            if name:
+                city.name = name
+
+            city.save()
+            serializer = CitySerializer(city).data
+            self.ctx = {"message": "City Updated!", "data": serializer}
+            self.status = status.HTTP_200_OK
+        except City.DoesNotExist:
+            self.ctx = {"message": f"City with id {self.pk} not found!"}
+            self.status = status.HTTP_404_NOT_FOUND
+        except Exception as e:
+            self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
+            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
+
     def delete(self, request):
         self.data = request.data
         self.pk = None
@@ -193,6 +247,7 @@ class MasterData(APIView):
             action_mapper = {
                 "deleteCategory": self.deleteCategory,
                 "deleteProduct": self.deleteProduct,
+                "deleteCity": self.deleteCity, 
             }
             action_status = action_mapper.get(action)
             if action_status:
@@ -224,6 +279,19 @@ class MasterData(APIView):
             self.status = status.HTTP_204_NO_CONTENT
         except Product.DoesNotExist:
             self.ctx = {"message": "Product not found!"}
+            self.status = status.HTTP_404_NOT_FOUND
+        except Exception as e:
+            self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
+            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    def deleteCity(self):
+        try:
+            city = City.objects.get(pk=self.pk)
+            city.delete()
+            self.ctx = {"message": "City Deleted!"}
+            self.status = status.HTTP_204_NO_CONTENT
+        except City.DoesNotExist:
+            self.ctx = {"message": "City not found!"}
             self.status = status.HTTP_404_NOT_FOUND
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}

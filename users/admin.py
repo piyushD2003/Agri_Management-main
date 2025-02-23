@@ -1,6 +1,8 @@
 from django.contrib import admin
-from users.models import User
+from .models import User, Farmer, FarmManager, Farm 
+
 
 admin.site.register(User)
-
-# Register your models here.
+admin.site.register(Farmer)
+admin.site.register(FarmManager)
+admin.site.register(Farm)  

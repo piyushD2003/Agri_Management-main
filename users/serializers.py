@@ -1,7 +1,8 @@
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
-from users.models import User
+from users.models import User, Farmer, FarmManager,Farm
+from master_data.models import City
 
 
 class LoginSerializer(serializers.Serializer):
@@ -37,5 +38,71 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'date_created', 'date_updated']
+           
+  
+class FarmerSerializer(serializers.ModelSerializer):
+    user = UserSerializer()  
+    
+    class Meta:
+        model = Farmer
+        fields = ['id', 'user', 'farm_name', 'farm_location', 'farm_size', 'city']
+        
+    def create(self, validated_data):
+        user_data = validated_data.pop('user')
+        user = User.objects.create(**user_data)
+        farmer = Farmer.objects.create(user=user, **validated_data)
+        return farmer
 
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user')
+        user = instance.user
+        user.first_name = user_data.get('first_name', user.first_name)
+        user.last_name = user_data.get('last_name', user.last_name)
+        user.email = user_data.get('email', user.email)
+        user.phone = user_data.get('phone', user.phone)
+        user.save()   
+        instance.farm_name = validated_data.get('farm_name', instance.farm_name)
+        instance.farm_location = validated_data.get('farm_location', instance.farm_location)
+        instance.farm_size = validated_data.get('farm_size', instance.farm_size)
+        instance.save()
+        
+        return instance    
+    
+    
+class FarmManagerSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
 
+    class Meta:
+        model = FarmManager
+        fields = ['id', 'user', 'farm_name', 'farm_location', 'manager_experience']
+           
+    def create(self, validated_data):
+        """ Custom create method to handle nested user creation """
+        user_data = validated_data.pop('user')
+        user = User.objects.create(**user_data)
+        farm_manager = FarmManager.objects.create(user=user, **validated_data)
+        return farm_manager
+
+    def update(self, instance, validated_data):
+        
+        user_data = validated_data.pop('user')
+        user = instance.user
+        user.first_name = user_data.get('first_name', user.first_name)
+        user.last_name = user_data.get('last_name', user.last_name)
+        user.email = user_data.get('email', user.email)
+        user.phone = user_data.get('phone', user.phone)
+        user.save()
+        instance.farm_name = validated_data.get('farm_name', instance.farm_name)
+        instance.farm_location = validated_data.get('farm_location', instance.farm_location)
+        instance.manager_experience = validated_data.get('manager_experience', instance.manager_experience)
+        instance.save()
+        return instance
+                            
+                            
+class FarmSerializer(serializers.ModelSerializer):
+    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all())  
+    user_created = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True) 
+    
+    class Meta:
+        model = Farm
+        fields = ['id', 'name', 'address', 'location_url', 'city', 'farm_size', 'user_created']

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import ProductCategory
-from .models import Product
+from .models import Product, City 
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -15,3 +15,9 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'description', 'price', 'category']
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = '__all__' 

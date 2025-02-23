@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'master_data',
-    'corsheaders'
+    'corsheaders',
+    'django_filters',
 ]
 
 MIDDLEWARE = [
