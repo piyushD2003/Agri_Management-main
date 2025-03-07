@@ -11,8 +11,7 @@ from .serializers import FarmerSerializer, FarmManagerSerializer
 from .models import Farmer, FarmManager
 from .serializers import FarmSerializer
 from .models import Farm 
-from .models import City 
-
+ 
 
 class RegisterView(APIView):
     def post(self, request):
@@ -75,74 +74,70 @@ class UserAPI(APIView):
 
         if "action" in self.data:
             action = str(self.data["action"])
-                   
             action_mapper = {
                  "getUser": self.getUser,
-                
             }
             action_status = action_mapper.get(action)
             if action_status:
-                
                 action_status(request)
             else:
-                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
+                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) 
             return Response(self.ctx, self.status)
         else:
-            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
-            
+            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) 
+
     def getUser(self, request):
         try:
-            
             data = User.objects.all()
             serializer = UserSerializer(data, many=True).data
             if self.pk and len(serializer):
                 serializer = serializer[0]
-            
-            self.ctx = {"message": "Successfully getting User!", "data": serializer}  # noqa
+            self.ctx = {"message": "Successfully getting User!", "data": serializer}  
             self.status = status.HTTP_200_OK
         except Exception:
             self.ctx = {"message": "Not getting data!"}
             self.status = status.HTTP_404_NOT_FOUND
-               
-    def post(self, request):
-            self.data = request.data
-            self.pk = None
-            self.user = request.user
-            if not request.user.is_authenticated:
-                return Response({"message": "Authentication credentials were not provided."},
-                                status=status.HTTP_401_UNAUTHORIZED)
-            if "id" in self.data:
-                self.pk = self.data.get("id")
 
-            if "action" in self.data:
-                action = str(self.data["action"])
-                action_mapper = {
-                    "postUser": self.postUser,
-                   
-                }
-                
-                action_status = action_mapper.get(action)
-                if action_status:
-                    action_status()
-                else:
-                    return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
-                return Response(self.ctx, self.status)
+    def post(self, request):
+        self.data = request.data
+        self.pk = None
+        self.user = request.user
+        if not request.user.is_authenticated:
+            return Response({"message": "Authentication credentials were not provided."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        if "id" in self.data:
+            self.pk = self.data.get("id")
+
+        if "action" in self.data:
+            action = str(self.data["action"])
+            action_mapper = {
+                "postUser": self.postUser,
+            }
+            action_status = action_mapper.get(action)
+            if action_status:
+                action_status()
             else:
-                return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa   
-                   
+                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) 
+            return Response(self.ctx, self.status)
+        else:
+            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST)
+
     def postUser(self):
         first_name = self.data.get("first_name")
         last_name = self.data.get("last_name")
         email = self.data.get("email")
         phone = self.data.get("phone")
+        is_admin = self.data.get("is_admin", False)  # Default to False if not provided
+        is_manager = self.data.get("is_manager", False)  # Default to False if not provided
 
         try:
-           
             obj = User(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                phone=phone
+                phone=phone,
+                is_admin=is_admin,
+                is_manager=is_manager
             )
             obj.save()
             serializer = UserSerializer(obj).data
@@ -151,7 +146,7 @@ class UserAPI(APIView):
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
-    
+
     def patch(self, request):   
         self.data = request.data
         self.pk = None
@@ -166,28 +161,26 @@ class UserAPI(APIView):
             action = str(self.data["action"])
             action_mapper = {
                 "patchUser": self.patchUser,
-               
-                
             }
             action_status = action_mapper.get(action)
             if action_status:
                 action_status()
             else:
-                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
+                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) 
             return Response(self.ctx, self.status)
         else:
-            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
-           
+            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST)
+
     def patchUser(self):
         first_name = self.data.get("first_name")
         last_name = self.data.get("last_name")
         email = self.data.get("email")
         phone = self.data.get("phone")
+        is_admin = self.data.get("is_admin")
+        is_manager = self.data.get("is_manager")
 
         try:
-            
             user = User.objects.get(pk=self.id)  
-
             if first_name:
                 user.first_name = first_name
             if last_name:
@@ -196,21 +189,22 @@ class UserAPI(APIView):
                 user.phone = phone
             if email:
                 user.email = email
-            
-            user.save()  
+            if is_admin is not None:
+                user.is_admin = is_admin 
+            if is_manager is not None:
+                user.is_manager = is_manager  
 
+            user.save()  
             serializer = UserSerializer(user).data
             self.ctx = {"message": "User is Updated!", "data": serializer}
             self.status = status.HTTP_200_OK 
         except User.DoesNotExist:
-          
             self.ctx = {"message": f"User with id {self.id} not found!"}
             self.status = status.HTTP_404_NOT_FOUND
         except Exception as e:
-           
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
-                
+
     def delete(self, request):     
         self.data = request.data
         self.pk = None
@@ -224,17 +218,16 @@ class UserAPI(APIView):
             action = str(self.data["action"])
             action_mapper = {
                 "delUser": self.delUser,
-                
             }
             action_status = action_mapper.get(action)
             if action_status:
                 action_status()
             else:
-                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
+                return Response({"message": "Choose Wrong Option !", "data": None}, status.HTTP_400_BAD_REQUEST) 
             return Response(self.ctx, self.status)
         else:
-            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) # noqa
-            
+            return Response({"message": "Action is not in dict", "data": None}, status.HTTP_400_BAD_REQUEST) 
+
     def delUser(self):
         try:
             data = User.objects.get(pk=self.id)
@@ -247,7 +240,7 @@ class UserAPI(APIView):
             self.status = status.HTTP_404_NOT_FOUND
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
-            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR                    
+            self.status = status.HTTP_500_INTERNAL_SERVER_ERROR                   
             
          
 class FarmAPI(APIView):
@@ -273,7 +266,7 @@ class FarmAPI(APIView):
 
             action_status = action_mapper.get(action)
             if action_status:
-                action_status()  # No need to pass request here
+                action_status(request)  # No need to pass request here
             else:
                 return Response({"message": "Choose Wrong Option!", "data": None}, status=status.HTTP_400_BAD_REQUEST)
             return Response(self.ctx, self.status)
@@ -305,18 +298,32 @@ class FarmAPI(APIView):
             self.ctx = {"message": "Error fetching data!"}
             self.status = status.HTTP_404_NOT_FOUND
             
-    def getFarm(self):
+    def getFarm(self, request):
         try:
-            data = Farm.objects.all()
-            serializer = FarmSerializer(data, many=True).data
-            if self.pk and len(serializer):
-                serializer = serializer[0]
-            self.ctx = {"message": "Successfully fetched Farm data!", "data": serializer}
-            self.status = status.HTTP_200_OK
-        except Exception:
-            self.ctx = {"message": "Error fetching data!"}
+            farms = Farm.objects.all()
+
+            city_id = request.GET.get("city_id")  
+            if city_id:
+                farms = farms.filter(city__id=city_id)  
+
+            farm = farms.first() 
+
+            if not farm:
+                self.ctx = {"message": "No farm found for the given city!", "data": []}
+                self.status = status.HTTP_404_NOT_FOUND
+            else:
+                serializer = FarmSerializer(farm).data  
+
+                serializer['city_name'] = farm.city.name
+
+                self.ctx = {"message": "Successfully fetched Farm data!", "data": serializer}
+                self.status = status.HTTP_200_OK
+        except Exception as e:
+            self.ctx = {"message": "Error fetching data!", "error": str(e)}
             self.status = status.HTTP_404_NOT_FOUND
-   
+
+        return Response(self.ctx, self.status)
+
             
     def post(self, request):
         self.data = request.data
@@ -420,14 +427,13 @@ class FarmAPI(APIView):
            
 
          
-            city = City.objects.get(id=city_id)
+          
 
             
             farm = Farm.objects.create(
                 name=farm_name,
                 address=address,
                 location_url=location_url,
-                city=city,
                 farm_size=farm_size,
                 user_created=self.request.user 
             )
@@ -436,7 +442,6 @@ class FarmAPI(APIView):
             serializer = FarmSerializer(farm).data
             self.ctx = {"message": "Farm is Created!", "data": serializer}
             self.status = status.HTTP_201_CREATED
-        except City.DoesNotExist:
             self.ctx = {"message": "City not found", "data": None}
             self.status = status.HTTP_404_NOT_FOUND
         except Exception as e:
@@ -564,16 +569,7 @@ class FarmAPI(APIView):
                 farm.location_url = location_url
             if farm_size:
                 farm.farm_size = farm_size
-
-            
-            if city_id:
-                try:
-                    city = City.objects.get(id=city_id)
-                    farm.city = city
-                except City.DoesNotExist:
-                    self.ctx = {"message": "City with the provided ID not found", "data": None}
-                    self.status = status.HTTP_404_NOT_FOUND
-                    return  
+ 
 
             
             farm.save()

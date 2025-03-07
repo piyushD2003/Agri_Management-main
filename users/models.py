@@ -1,7 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from master_data.models import City
-
 
 
 class UserManager(BaseUserManager):
@@ -49,6 +47,14 @@ class User(AbstractBaseUser):
         default=False,
         verbose_name="Is Superuser"
     )
+    is_admin = models.BooleanField(
+        default=False,
+        verbose_name="Is Admin"
+    )
+    is_manager = models.BooleanField(
+        default=False,
+        verbose_name="Is Manager"
+    )
     date_created = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Date Created"
@@ -72,10 +78,10 @@ class User(AbstractBaseUser):
         return self.email
 
     def has_perm(self, perm, obj=None):
-        return self.is_superuser or self.is_staff
+        return self.is_superuser or self.is_staff or self.is_admin
 
     def has_module_perms(self, app_label):
-        return self.is_superuser or self.is_staff
+        return self.is_superuser or self.is_staff or self.is_admin
 
 
 class Farmer(models.Model):
@@ -138,10 +144,7 @@ class Farm(models.Model):
         verbose_name="Farm Address"
     )
     location_url = models.URLField(verbose_name="Farm Location URL")
-    city = models.ForeignKey(
-        City, on_delete=models.CASCADE, 
-        verbose_name="City"
-    )
+   
     farm_size = models.CharField(max_length=50, 
         verbose_name="Farm Size"
     )

@@ -2,7 +2,6 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import serializers
 from users.models import User, Farmer, FarmManager,Farm
-from master_data.models import City
 
 
 class LoginSerializer(serializers.Serializer):
@@ -37,7 +36,7 @@ class LoginSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'date_created', 'date_updated']
+        fields = '__all__'  
            
   
 class FarmerSerializer(serializers.ModelSerializer):
@@ -100,9 +99,11 @@ class FarmManagerSerializer(serializers.ModelSerializer):
                             
                             
 class FarmSerializer(serializers.ModelSerializer):
-    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all())  
-    user_created = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True) 
     
+
     class Meta:
         model = Farm
-        fields = ['id', 'name', 'address', 'location_url', 'city', 'farm_size', 'user_created']
+        fields = '__all__'  
+
+    def get_city_name(self, obj):
+        return obj.city.name if obj.city else None
