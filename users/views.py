@@ -266,7 +266,7 @@ class FarmAPI(APIView):
 
             action_status = action_mapper.get(action)
             if action_status:
-                action_status(request)  # No need to pass request here
+                action_status()  # No need to pass request here
             else:
                 return Response({"message": "Choose Wrong Option!", "data": None}, status=status.HTTP_400_BAD_REQUEST)
             return Response(self.ctx, self.status)
