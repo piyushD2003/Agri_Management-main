@@ -44,7 +44,7 @@ class FarmerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Farmer
-        fields = ['id', 'user', 'farm_name', 'farm_location', 'farm_size', 'city']
+        fields = ['id', 'user', 'farm_name', 'farm_location', 'farm_size']
         
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -99,11 +99,11 @@ class FarmManagerSerializer(serializers.ModelSerializer):
                             
                             
 class FarmSerializer(serializers.ModelSerializer):
-    
+    # user = UserSerializer()
 
     class Meta:
         model = Farm
-        fields = '__all__'  
+        fields = ['name', 'address', 'location_url', 'farm_size','id']
 
-    def get_city_name(self, obj):
-        return obj.city.name if obj.city else None
+    # def get_city_name(self, obj):
+    #     return obj.city.name if obj.city else None

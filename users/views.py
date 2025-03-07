@@ -261,19 +261,18 @@ class FarmAPI(APIView):
             action_mapper = {
                     "getFarmer": self.getFarmer,
                     "getFarmManager": self.getFarmManager,
-                    "getFarm": self.getFarm,  
+                    "getFarm": self.getFarm,
             }
 
             action_status = action_mapper.get(action)
             if action_status:
-                action_status()  # No need to pass request here
+                action_status()  
             else:
                 return Response({"message": "Choose Wrong Option!", "data": None}, status=status.HTTP_400_BAD_REQUEST)
             return Response(self.ctx, self.status)
         else:
             return Response({"message": "Action is not in dict", "data": None}, status=status.HTTP_400_BAD_REQUEST)
 
-        
     def getFarmer(self):
         try:
             data = Farmer.objects.all()
@@ -285,6 +284,7 @@ class FarmAPI(APIView):
         except Exception:
             self.ctx = {"message": "Error fetching data!"}
             self.status = status.HTTP_404_NOT_FOUND
+
 
     def getFarmManager(self):
         try:
@@ -298,13 +298,13 @@ class FarmAPI(APIView):
             self.ctx = {"message": "Error fetching data!"}
             self.status = status.HTTP_404_NOT_FOUND
             
-    def getFarm(self, request):
+    def getFarm(self,):
         try:
             farms = Farm.objects.all()
 
-            city_id = request.GET.get("city_id")  
-            if city_id:
-                farms = farms.filter(city__id=city_id)  
+            # city_id = request.GET.get("city_id")  
+            # if city_id:
+            #     farms = farms.filter(city__id=city_id)  
 
             farm = farms.first() 
 
@@ -314,7 +314,7 @@ class FarmAPI(APIView):
             else:
                 serializer = FarmSerializer(farm).data  
 
-                serializer['city_name'] = farm.city.name
+                # serializer['city_name'] = farm.city.name
 
                 self.ctx = {"message": "Successfully fetched Farm data!", "data": serializer}
                 self.status = status.HTTP_200_OK
@@ -419,17 +419,12 @@ class FarmAPI(APIView):
     def postFarm(self):
         farm_name = self.data.get("farm_name")
         address = self.data.get("address")
-        location_url = self.data.get("location_url")
-        city_id = self.data.get("city") 
+        location_url = self.data.get("location_url") 
         farm_size = self.data.get("farm_size")
 
         try:
-           
-
-         
-          
-
             
+            # Create the farm object
             farm = Farm.objects.create(
                 name=farm_name,
                 address=address,
@@ -438,17 +433,22 @@ class FarmAPI(APIView):
                 user_created=self.request.user 
             )
 
-          
+            # Serialize the farm object and include the farm's id
             serializer = FarmSerializer(farm).data
+            serializer['id'] = farm.id  # Add the farm's id to the serialized data
+
+            # Prepare the response context
             self.ctx = {"message": "Farm is Created!", "data": serializer}
-            self.status = status.HTTP_201_CREATED
-            self.ctx = {"message": "City not found", "data": None}
-            self.status = status.HTTP_404_NOT_FOUND
+            self.status = status.HTTP_200_OK
+
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
-
+        
         return Response(self.ctx, status=self.status)
+
+    
+
     def patch(self, request):
         self.data = request.data
         self.pk = None
@@ -554,13 +554,16 @@ class FarmAPI(APIView):
         address = self.data.get("address")
         location_url = self.data.get("location_url")
         farm_size = self.data.get("farm_size")
-        city_id = self.data.get("city")  
-
+       
+        
         try:
-           
-            farm = Farm.objects.get(pk=self.pk)
-
+            farm_id = self.data.get("id")
             
+            if not farm_id:
+                return Response({"message": "Farm ID is required", "data": None}, status=status.HTTP_400_BAD_REQUEST)
+
+            farm = Farm.objects.get(id=farm_id)
+
             if farm_name:
                 farm.name = farm_name
             if address:
@@ -569,12 +572,10 @@ class FarmAPI(APIView):
                 farm.location_url = location_url
             if farm_size:
                 farm.farm_size = farm_size
- 
 
-            
+
             farm.save()
 
-           
             serializer = FarmSerializer(farm).data
             self.ctx = {"message": "Farm is Updated!", "data": serializer}
             self.status = status.HTTP_200_OK
@@ -620,19 +621,27 @@ class FarmAPI(APIView):
             return Response({"message": "Action is not in dict", "data": None}, status=status.HTTP_400_BAD_REQUEST)
 
     def delFarmer(self):
+
         try:
-            farmer = Farmer.objects.get(pk=self.pk)
+            # Try fetching the Farmer using the provided ID
+            farmer = Farmer.objects.get(pk=self.pk)  # This will throw an exception if not found
+
+            # Delete the farmer and the associated user
             user = farmer.user
             farmer.delete()
             user.delete()
+            
             self.ctx = {"message": "Farmer deleted!"}
             self.status = status.HTTP_204_NO_CONTENT
+            
         except Farmer.DoesNotExist:
             self.ctx = {"message": "Farmer id Not Found!"}
             self.status = status.HTTP_404_NOT_FOUND
+            
         except Exception as e:
             self.ctx = {"message": "Something went wrong!", "error_msg": str(e)}
             self.status = status.HTTP_500_INTERNAL_SERVER_ERROR
+
 
     def delFarmManager(self):
         try:
